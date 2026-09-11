@@ -45,6 +45,42 @@ public class PhotoController {
                 .toList();
     }
 
+    @GetMapping("/public")
+    public List<PhotoResponseDTO> getPublicPhotos() {
+
+        return photoService.getPublicPhotos()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    @PutMapping("/{id}")
+    public PhotoResponseDTO updatePhoto(
+            @PathVariable Long id,
+            @Valid @RequestBody PhotoDTO photoDTO,
+            Authentication authentication) {
+
+        Photo photo = photoService.updatePhoto(
+                id,
+                photoDTO,
+                authentication.getName()
+        );
+
+        return toDTO(photo);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePhoto(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        photoService.deletePhoto(
+                id,
+                authentication.getName()
+        );
+    }
+
     private PhotoResponseDTO toDTO(Photo photo) {
 
         return new PhotoResponseDTO(

@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 const API_URL = "http://localhost:8080";
 
 function App() {
   const [page, setPage] = useState("login");
+  const [section, setSection] = useState("home");
+
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,11 +17,29 @@ function App() {
 
   const [user, setUser] = useState(null);
   const [photos, setPhotos] = useState([]);
+  const [publicPhotos, setPublicPhotos] = useState([]);
 
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoTitle, setPhotoTitle] = useState("");
+  const [photoVisible, setPhotoVisible] = useState(false);
+
+  const [editingPhoto, setEditingPhoto] = useState(null);
 
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (token) {
+      loadProfile(token)
+        .then(() => {
+          loadPhotos(token);
+          loadPublicPhotos(token);
+          setPage("dashboard");
+        })
+        .catch(() => {
+          handleLogout();
+        });
+    }
+  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -81,10 +101,12 @@ function App() {
 
       await loadProfile(data);
       await loadPhotos(data);
+      await loadPublicPhotos(data);
 
       setUsername("");
       setPassword("");
       setPage("dashboard");
+      setSection("home");
     } catch (error) {
       setMessage(error.message);
     }
@@ -120,6 +142,21 @@ function App() {
     setPhotos(data);
   };
 
+  const loadPublicPhotos = async (jwt = token) => {
+    const response = await fetch(`${API_URL}/api/photos/public`, {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Impossibile recuperare i post pubblici");
+    }
+
+    const data = await response.json();
+    setPublicPhotos(data);
+  };
+
   const handleCreatePhoto = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -134,6 +171,7 @@ function App() {
         body: JSON.stringify({
           url: photoUrl,
           title: photoTitle,
+          visible: photoVisible,
         }),
       });
 
@@ -143,9 +181,101 @@ function App() {
 
       setPhotoUrl("");
       setPhotoTitle("");
+      setPhotoVisible(false);
+
       setMessage("Foto aggiunta!");
 
       await loadPhotos();
+      await loadPublicPhotos();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  const startEdit = (photo) => {
+    setEditingPhoto(photo);
+
+    setPhotoUrl(photo.url);
+    setPhotoTitle(photo.title);
+    setPhotoVisible(photo.visible);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingPhoto(null);
+    setPhotoUrl("");
+    setPhotoTitle("");
+    setPhotoVisible(false);
+    setMessage("");
+  };
+
+  const handleUpdatePhoto = async (e) => {
+    e.preventDefault();
+    setMessage("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/photos/${editingPhoto.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            url: photoUrl,
+            title: photoTitle,
+            visible: photoVisible,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Impossibile modificare la foto");
+      }
+
+      setMessage("Foto modificata!");
+
+      cancelEdit();
+
+      await loadPhotos();
+      await loadPublicPhotos();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  const handleDeletePhoto = async (id) => {
+    const confirmed = window.confirm(
+      "Vuoi davvero eliminare questa foto?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/photos/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Impossibile eliminare la foto");
+      }
+
+      setMessage("Foto eliminata!");
+
+      await loadPhotos();
+      await loadPublicPhotos();
     } catch (error) {
       setMessage(error.message);
     }
@@ -153,10 +283,13 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+
     setToken("");
     setUser(null);
     setPhotos([]);
+    setPublicPhotos([]);
     setPage("login");
+    setSection("home");
     setMessage("");
   };
 
@@ -194,6 +327,7 @@ function App() {
 
               <form onSubmit={handleLogin}>
                 <label>Username</label>
+
                 <input
                   type="text"
                   value={username}
@@ -202,6 +336,7 @@ function App() {
                 />
 
                 <label>Password</label>
+
                 <input
                   type="password"
                   value={password}
@@ -218,6 +353,7 @@ function App() {
 
               <p className="switch-text">
                 Non hai ancora un account?
+
                 <button
                   className="text-button"
                   onClick={() => {
@@ -266,6 +402,7 @@ function App() {
 
               <form onSubmit={handleRegister}>
                 <label>Username</label>
+
                 <input
                   type="text"
                   value={username}
@@ -274,6 +411,7 @@ function App() {
                 />
 
                 <label>Email</label>
+
                 <input
                   type="email"
                   value={email}
@@ -282,6 +420,7 @@ function App() {
                 />
 
                 <label>Password</label>
+
                 <input
                   type="password"
                   value={password}
@@ -298,6 +437,7 @@ function App() {
 
               <p className="switch-text">
                 Hai già un account?
+
                 <button
                   className="text-button"
                   onClick={() => {
@@ -320,6 +460,28 @@ function App() {
       <header className="topbar">
         <div className="brand dark">MOMENTI</div>
 
+        <nav className="main-nav">
+          <button
+            className={section === "home" ? "nav-active" : ""}
+            onClick={() => {
+              setSection("home");
+              setMessage("");
+            }}
+          >
+            Home
+          </button>
+
+          <button
+            className={section === "profile" ? "nav-active" : ""}
+            onClick={() => {
+              setSection("profile");
+              setMessage("");
+            }}
+          >
+            Il mio profilo
+          </button>
+        </nav>
+
         <div className="topbar-actions">
           <span className="welcome">
             Ciao, {user?.username}
@@ -332,86 +494,246 @@ function App() {
       </header>
 
       <main className="dashboard-content">
-        <section className="profile-header">
-          <div className="profile-avatar">
-            {user?.username?.charAt(0).toUpperCase()}
-          </div>
+        {section === "home" && (
+          <>
+            <section className="profile-header home-header">
+              <div>
+                <span className="eyebrow">HOME</span>
 
-          <div>
-            <span className="eyebrow">IL TUO SPAZIO</span>
-            <h1>{user?.username}</h1>
-            <p>{user?.email}</p>
-          </div>
-        </section>
+                <h1>Momenti da scoprire</h1>
 
-        <section className="add-section">
-          <div>
-            <span className="eyebrow">NUOVO RICORDO</span>
-            <h2>Aggiungi una foto</h2>
-          </div>
+                <p>
+                  Guarda le immagini che gli altri hanno scelto
+                  di condividere.
+                </p>
+              </div>
+            </section>
 
-          <form onSubmit={handleCreatePhoto} className="photo-form">
-            <input
-              type="url"
-              placeholder="URL della foto"
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              required
-            />
+            <section className="gallery-section">
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">ESPLORA</span>
 
-            <input
-              type="text"
-              placeholder="Titolo"
-              value={photoTitle}
-              onChange={(e) => setPhotoTitle(e.target.value)}
-              required
-            />
+                  <h2>Post pubblici</h2>
+                </div>
 
-            <button type="submit" className="primary-button">
-              Aggiungi
-            </button>
-          </form>
+                <span className="photo-count">
+                  {publicPhotos.length}{" "}
+                  {publicPhotos.length === 1 ? "foto" : "foto"}
+                </span>
+              </div>
 
-          {message && <p className="message">{message}</p>}
-        </section>
+              {publicPhotos.length === 0 ? (
+                <div className="empty-state">
+                  <span>○</span>
 
-        <section className="gallery-section">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">RACCOLTA</span>
-              <h2>I tuoi momenti</h2>
-            </div>
+                  <h3>Ancora nessun post pubblico</h3>
 
-            <span className="photo-count">
-              {photos.length} {photos.length === 1 ? "foto" : "foto"}
-            </span>
-          </div>
+                  <p>
+                    Quando qualcuno condividerà un momento,
+                    apparirà qui.
+                  </p>
+                </div>
+              ) : (
+                <div className="gallery">
+                  {publicPhotos.map((photo) => (
+                    <article
+                      className="photo-card"
+                      key={photo.id}
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.title}
+                      />
 
-          {photos.length === 0 ? (
-            <div className="empty-state">
-              <span>○</span>
-              <h3>Ancora nessun momento</h3>
-              <p>
-                Aggiungi la tua prima foto per iniziare la raccolta.
-              </p>
-            </div>
-          ) : (
-            <div className="gallery">
-              {photos.map((photo) => (
-                <article className="photo-card" key={photo.id}>
-                  <img src={photo.url} alt={photo.title} />
+                      <div className="photo-info">
+                        <h3>{photo.title}</h3>
 
-                  <div className="photo-info">
-                    <h3>{photo.title}</h3>
-                    <span>
-                      {photo.visible ? "Pubblica" : "Privata"}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
+                        <span>Pubblica</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+
+        {section === "profile" && (
+          <>
+            <section className="profile-header">
+              <div className="profile-avatar">
+                {user?.username?.charAt(0).toUpperCase()}
+              </div>
+
+              <div>
+                <span className="eyebrow">
+                  IL TUO SPAZIO
+                </span>
+
+                <h1>{user?.username}</h1>
+
+                <p>{user?.email}</p>
+              </div>
+            </section>
+
+            <section className="add-section">
+              <div>
+                <span className="eyebrow">
+                  {editingPhoto
+                    ? "MODIFICA MOMENTO"
+                    : "NUOVO RICORDO"}
+                </span>
+
+                <h2>
+                  {editingPhoto
+                    ? "Modifica la foto"
+                    : "Aggiungi una foto"}
+                </h2>
+              </div>
+
+              <form
+                onSubmit={
+                  editingPhoto
+                    ? handleUpdatePhoto
+                    : handleCreatePhoto
+                }
+                className="photo-form"
+              >
+                <input
+                  type="url"
+                  placeholder="URL della foto"
+                  value={photoUrl}
+                  onChange={(e) =>
+                    setPhotoUrl(e.target.value)
+                  }
+                  required
+                />
+
+                <input
+                  type="text"
+                  placeholder="Titolo"
+                  value={photoTitle}
+                  onChange={(e) =>
+                    setPhotoTitle(e.target.value)
+                  }
+                  required
+                />
+
+                <button
+                  type="submit"
+                  className="primary-button"
+                >
+                  {editingPhoto
+                    ? "Salva modifiche"
+                    : "Aggiungi"}
+                </button>
+              </form>
+
+              <label className="visibility-option">
+                <input
+                  type="checkbox"
+                  checked={photoVisible}
+                  onChange={(e) =>
+                    setPhotoVisible(e.target.checked)
+                  }
+                />
+
+                <span>
+                  Rendi questo momento pubblico
+                </span>
+              </label>
+
+              {editingPhoto && (
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={cancelEdit}
+                >
+                  Annulla modifica
+                </button>
+              )}
+
+              {message && (
+                <p className="message">{message}</p>
+              )}
+            </section>
+
+            <section className="gallery-section">
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">
+                    RACCOLTA PERSONALE
+                  </span>
+
+                  <h2>I tuoi momenti</h2>
+                </div>
+
+                <span className="photo-count">
+                  {photos.length}{" "}
+                  {photos.length === 1 ? "foto" : "foto"}
+                </span>
+              </div>
+
+              {photos.length === 0 ? (
+                <div className="empty-state">
+                  <span>○</span>
+
+                  <h3>Ancora nessun momento</h3>
+
+                  <p>
+                    Aggiungi la tua prima foto per iniziare
+                    la raccolta.
+                  </p>
+                </div>
+              ) : (
+                <div className="gallery">
+                  {photos.map((photo) => (
+                    <article
+                      className="photo-card"
+                      key={photo.id}
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.title}
+                      />
+
+                      <div className="photo-info">
+                        <h3>{photo.title}</h3>
+
+                        <span>
+                          {photo.visible
+                            ? "Pubblica"
+                            : "Privata"}
+                        </span>
+
+                        <div className="photo-actions">
+                          <button
+                            onClick={() =>
+                              startEdit(photo)
+                            }
+                            className="edit-button"
+                          >
+                            Modifica
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleDeletePhoto(photo.id)
+                            }
+                            className="delete-button"
+                          >
+                            Elimina
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </main>
     </div>
   );

@@ -31,7 +31,7 @@ public class PhotoService {
 
         photo.setUrl(photoDTO.getUrl());
         photo.setTitle(photoDTO.getTitle());
-        photo.setVisible(false);
+        photo.setVisible(photoDTO.isVisible());
         photo.setUser(user);
 
         return photoRepository.save(photo);
@@ -45,7 +45,55 @@ public class PhotoService {
 
         return photoRepository.findAll()
                 .stream()
-                .filter(photo -> photo.getUser().getId().equals(user.getId()))
+                .filter(photo ->
+                        photo.getUser().getId().equals(user.getId()))
                 .toList();
+    }
+
+    public List<Photo> getPublicPhotos() {
+
+        return photoRepository.findAll()
+                .stream()
+                .filter(Photo::isVisible)
+                .toList();
+    }
+
+    public Photo updatePhoto(
+            Long photoId,
+            PhotoDTO photoDTO,
+            String username) {
+
+        Photo photo = getUserPhoto(photoId, username);
+
+        photo.setUrl(photoDTO.getUrl());
+        photo.setTitle(photoDTO.getTitle());
+        photo.setVisible(photoDTO.isVisible());
+
+        return photoRepository.save(photo);
+    }
+
+    public void deletePhoto(
+            Long photoId,
+            String username) {
+
+        Photo photo = getUserPhoto(photoId, username);
+
+        photoRepository.delete(photo);
+    }
+
+    private Photo getUserPhoto(
+            Long photoId,
+            String username) {
+
+        Photo photo = photoRepository.findById(photoId)
+                .orElseThrow(() ->
+                        new RuntimeException("Foto non trovata"));
+
+        if (!photo.getUser().getUsername().equals(username)) {
+            throw new RuntimeException(
+                    "Non puoi modificare questa foto");
+        }
+
+        return photo;
     }
 }

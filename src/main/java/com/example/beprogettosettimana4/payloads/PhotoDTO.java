@@ -10,12 +10,15 @@ public class PhotoDTO {
     @NotBlank(message = "Il titolo è obbligatorio")
     private String title;
 
+    private boolean visible;
+
     public PhotoDTO() {
     }
 
-    public PhotoDTO(String url, String title) {
+    public PhotoDTO(String url, String title, boolean visible) {
         this.url = url;
         this.title = title;
+        this.visible = visible;
     }
 
     public String getUrl() {
@@ -32,5 +35,13 @@ public class PhotoDTO {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 }
