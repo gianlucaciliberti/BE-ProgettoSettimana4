@@ -853,3 +853,76 @@ input::placeholder {
     margin-left: auto;
   }
 }
+
+/* =========================
+   DOCUMENTI
+========================= */
+
+.documents-section {
+  margin-top: 45px;
+  padding-top: 35px;
+  border-top: 1px solid #dcd4c8;
+}
+
+.document-form {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr auto;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.document-form input {
+  min-width: 0;
+}
+
+.documents-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.document-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  background: #f5f0e8;
+  border: 1px solid #ddd4c7;
+  border-radius: 10px;
+}
+
+.document-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #243b35;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.document-info h3 {
+  margin: 0 0 6px;
+  color: #292621;
+}
+
+.document-info a {
+  color: #536f63;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.document-info a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 800px) {
+  .document-form {
+    grid-template-columns: 1fr;
+  }
+}

@@ -18,6 +18,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [publicPhotos, setPublicPhotos] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [documentName, setDocumentName] = useState("");
+  const [documentUrl, setDocumentUrl] = useState("");
 
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoTitle, setPhotoTitle] = useState("");
@@ -27,19 +30,6 @@ function App() {
 
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (token) {
-      loadProfile(token)
-        .then(() => {
-          loadPhotos(token);
-          loadPublicPhotos(token);
-          setPage("dashboard");
-        })
-        .catch(() => {
-          handleLogout();
-        });
-    }
-  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -101,6 +91,7 @@ function App() {
 
       await loadProfile(data);
       await loadPhotos(data);
+      await loadDocuments(data);
       await loadPublicPhotos(data);
 
       setUsername("");
@@ -140,6 +131,21 @@ function App() {
 
     const data = await response.json();
     setPhotos(data);
+  };
+
+  const loadDocuments = async (jwt = token) => {
+    const response = await fetch(`${API_URL}/api/documents`, {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Impossibile recuperare i documenti");
+    }
+
+    const data = await response.json();
+    setDocuments(data);
   };
 
   const loadPublicPhotos = async (jwt = token) => {
@@ -276,6 +282,37 @@ function App() {
 
       await loadPhotos();
       await loadPublicPhotos();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  const handleCreateDocument = async (e) => {
+    e.preventDefault();
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/documents`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: documentName,
+          url: documentUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Impossibile aggiungere il documento");
+      }
+
+      setDocumentName("");
+      setDocumentUrl("");
+      setMessage("Documento aggiunto!");
+
+      await loadDocuments();
     } catch (error) {
       setMessage(error.message);
     }
@@ -726,6 +763,82 @@ function App() {
                             Elimina
                           </button>
                         </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+            <section className="documents-section">
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">ARCHIVIO</span>
+                  <h2>I tuoi documenti</h2>
+                </div>
+
+                <span className="photo-count">
+                  {documents.length}{" "}
+                  {documents.length === 1 ? "documento" : "documenti"}
+                </span>
+              </div>
+
+              <form
+                onSubmit={handleCreateDocument}
+                className="document-form"
+              >
+                <input
+                  type="text"
+                  placeholder="Nome del documento"
+                  value={documentName}
+                  onChange={(e) => setDocumentName(e.target.value)}
+                  required
+                />
+
+                <input
+                  type="url"
+                  placeholder="URL del documento"
+                  value={documentUrl}
+                  onChange={(e) => setDocumentUrl(e.target.value)}
+                  required
+                />
+
+                <button
+                  type="submit"
+                  className="primary-button"
+                >
+                  Aggiungi documento
+                </button>
+              </form>
+
+              {documents.length === 0 ? (
+                <div className="empty-state">
+                  <span>□</span>
+                  <h3>Nessun documento</h3>
+                  <p>
+                    Aggiungi un documento al tuo archivio personale.
+                  </p>
+                </div>
+              ) : (
+                <div className="documents-list">
+                  {documents.map((document) => (
+                    <article
+                      className="document-card"
+                      key={document.id}
+                    >
+                      <div className="document-icon">
+                        DOC
+                      </div>
+
+                      <div className="document-info">
+                        <h3>{document.name}</h3>
+
+                        <a
+                          href={document.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Apri documento
+                        </a>
                       </div>
                     </article>
                   ))}
