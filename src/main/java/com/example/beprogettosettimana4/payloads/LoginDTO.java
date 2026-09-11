@@ -1,24 +1,29 @@
 package com.example.beprogettosettimana4.payloads;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class LoginDTO {
 
-    private String identifier;
+    @NotBlank(message = "Lo username è obbligatorio")
+    private String username;
+
+    @NotBlank(message = "La password è obbligatoria")
     private String password;
 
     public LoginDTO() {
     }
 
-    public LoginDTO(String identifier, String password) {
-        this.identifier = identifier;
+    public LoginDTO(String username, String password) {
+        this.username = username;
         this.password = password;
     }
 
-    public String getIdentifier() {
-        return identifier;
+    public String getUsername() {
+        return username;
     }
 
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPassword() {
