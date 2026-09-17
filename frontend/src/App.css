@@ -197,13 +197,12 @@ input:focus {
   align-items: center;
   justify-content: space-between;
 
-  border-bottom: 1px solid #dbdbdb;
-
-  background: #ffffff;
+  background: #833ab4;
 }
 
 .topbar-logo {
   font-size: 28px;
+  color: #ffffff;
 }
 
 .topbar-actions {
@@ -213,24 +212,24 @@ input:focus {
 }
 
 .welcome {
-  color: #262626;
+  color: #f3e9fb;
   font-size: 14px;
 }
 
 .logout-button {
-  border: 1px solid #dbdbdb;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   padding: 7px 14px;
   background: transparent;
-  color: #262626;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 600;
   transition: 0.15s;
 }
 
 .logout-button:hover {
-  background: #fafafa;
-  border-color: #a8a8a8;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #ffffff;
 }
 
 /* MAIN */
@@ -261,11 +260,12 @@ input:focus {
   margin: 0;
   font-size: 28px;
   font-weight: 600;
+  color: #1a1a1a;
 }
 
 .profile-header p {
   margin: 4px 0 0;
-  color: #8e8e8e;
+  color: #4a4a4a;
 }
 
 .profile-avatar {
@@ -309,7 +309,7 @@ input:focus {
 .eyebrow {
   display: block;
   margin-bottom: 4px;
-  color: #8e8e8e;
+  color: #833ab4;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -508,19 +508,19 @@ input:focus {
   border-radius: 8px;
   padding: 8px 14px;
   background: transparent;
-  color: #262626;
+  color: #f3e9fb;
   font-size: 14px;
   font-weight: 600;
   transition: 0.15s;
 }
 
 .main-nav button:hover {
-  background: #fafafa;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .main-nav .nav-active {
-  background: #262626;
-  color: white;
+  background: #ffffff;
+  color: #833ab4;
 }
 
 /* =========================
