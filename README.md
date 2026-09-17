@@ -2,6 +2,8 @@
 
 Applicazione web full stack sviluppata con Spring Boot e React + Vite.
 
+📄 Documentazione tecnica completa (modello DB con diagramma ER, dettaglio endpoint, scelte implementative, screenshot pgAdmin/Postman): [docs/DOCUMENTAZIONE.md](docs/DOCUMENTAZIONE.md)
+
 L'app permette agli utenti di creare un account, effettuare il login, pubblicare post con una o più foto (geolocalizzati) e caricare documenti sul proprio profilo, elaborati automaticamente tramite OCR.
 
 # Tecnologie
