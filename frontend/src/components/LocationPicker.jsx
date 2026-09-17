@@ -39,10 +39,12 @@ function RecenterMap({ position, zoom }) {
 function LocationPicker({ latitude, longitude, address, onChange }) {
   const [addressInput, setAddressInput] = useState(address || "");
   const [searching, setSearching] = useState(false);
+  const [prevAddress, setPrevAddress] = useState(address);
 
-  useEffect(() => {
+  if (address !== prevAddress) {
+    setPrevAddress(address);
     setAddressInput(address || "");
-  }, [address]);
+  }
 
   const hasPosition = latitude != null && longitude != null;
   const position = hasPosition ? [latitude, longitude] : null;
