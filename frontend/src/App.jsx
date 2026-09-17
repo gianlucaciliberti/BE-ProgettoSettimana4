@@ -421,32 +421,17 @@ function App() {
       <div className="app">
         <div className="auth-layout">
           <div className="intro-panel">
-            <span className="brand">MOMENTI</span>
-
-            <h1>
-              Le tue storie,
-              <br />
-              senza rumore.
-            </h1>
+            <span className="ig-logo">InstagramClone</span>
 
             <p>
-              Uno spazio personale dove raccogliere immagini,
-              ricordi e piccoli momenti da conservare.
+              Condividi i tuoi momenti con foto, luoghi
+              e ricordi.
             </p>
-
-            <div className="decorative-shape shape-one"></div>
-            <div className="decorative-shape shape-two"></div>
           </div>
 
           <div className="form-panel">
             <div className="form-box">
-              <span className="eyebrow">BENTORNATO</span>
-
-              <h2>Accedi al tuo spazio</h2>
-
-              <p className="form-description">
-                Inserisci le tue credenziali per continuare.
-              </p>
+              <span className="ig-logo form-logo">InstagramClone</span>
 
               <form onSubmit={handleLogin}>
                 <label>Username</label>
@@ -498,30 +483,18 @@ function App() {
     return (
       <div className="app">
         <div className="auth-layout">
-          <div className="intro-panel register-intro">
-            <span className="brand">MOMENTI</span>
-
-            <h1>
-              Comincia
-              <br />
-              a raccogliere.
-            </h1>
+          <div className="intro-panel">
+            <span className="ig-logo">InstagramClone</span>
 
             <p>
-              Crea il tuo spazio personale e conserva ciò
-              che vuoi ricordare.
+              Iscriviti per vedere foto e video dalle
+              persone che segui.
             </p>
           </div>
 
           <div className="form-panel">
             <div className="form-box">
-              <span className="eyebrow">NUOVO ACCOUNT</span>
-
-              <h2>Crea il tuo spazio</h2>
-
-              <p className="form-description">
-                Bastano pochi dati per iniziare.
-              </p>
+              <span className="ig-logo form-logo">InstagramClone</span>
 
               <form onSubmit={handleRegister}>
                 <label>Username</label>
@@ -581,7 +554,7 @@ function App() {
   return (
     <div className="dashboard">
       <header className="topbar">
-        <div className="brand dark">MOMENTI</div>
+        <div className="ig-logo topbar-logo">InstagramClone</div>
 
         <nav className="main-nav">
           <button
@@ -661,6 +634,21 @@ function App() {
                 <div className="gallery">
                   {publicPosts.map((post) => (
                     <article className="photo-card" key={post.id}>
+                      <div className="post-card-header">
+                        <div className="post-avatar">
+                          {post.username.charAt(0).toUpperCase()}
+                        </div>
+
+                        <div className="post-header-text">
+                          <span className="post-username">{post.username}</span>
+                          {formatLocation(post) && (
+                            <span className="post-location">
+                              {formatLocation(post)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="post-photos-grid">
                         {post.photoUrls.map((url) => (
                           <img
@@ -672,15 +660,10 @@ function App() {
                       </div>
 
                       <div className="photo-info">
-                        <h3>{post.caption}</h3>
-
-                        <span>@{post.username}</span>
-
-                        {formatLocation(post) && (
-                          <p className="post-location">
-                            📍 {formatLocation(post)}
-                          </p>
-                        )}
+                        <p className="post-caption">
+                          <span className="post-username">{post.username}</span>{" "}
+                          {post.caption}
+                        </p>
                       </div>
                     </article>
                   ))}
@@ -801,6 +784,31 @@ function App() {
                 <div className="gallery">
                   {posts.map((post) => (
                     <article className="photo-card" key={post.id}>
+                      <div className="post-card-header">
+                        <div className="post-avatar">
+                          {post.username.charAt(0).toUpperCase()}
+                        </div>
+
+                        <div className="post-header-text">
+                          <span className="post-username">{post.username}</span>
+                          {formatLocation(post) && (
+                            <span className="post-location">
+                              {formatLocation(post)}
+                            </span>
+                          )}
+                        </div>
+
+                        <span
+                          className={
+                            post.visible
+                              ? "visibility-badge visibility-public"
+                              : "visibility-badge"
+                          }
+                        >
+                          {post.visible ? "Pubblico" : "Privato"}
+                        </span>
+                      </div>
+
                       <div className="post-photos-grid">
                         {post.photoUrls.map((url) => (
                           <img
@@ -812,17 +820,10 @@ function App() {
                       </div>
 
                       <div className="photo-info">
-                        <h3>{post.caption}</h3>
-
-                        <span>
-                          {post.visible ? "Pubblico" : "Privato"}
-                        </span>
-
-                        {formatLocation(post) && (
-                          <p className="post-location">
-                            📍 {formatLocation(post)}
-                          </p>
-                        )}
+                        <p className="post-caption">
+                          <span className="post-username">{post.username}</span>{" "}
+                          {post.caption}
+                        </p>
 
                         <div className="photo-actions">
                           <button
