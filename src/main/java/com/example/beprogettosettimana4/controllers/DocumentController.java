@@ -1,12 +1,13 @@
 package com.example.beprogettosettimana4.controllers;
 
 import com.example.beprogettosettimana4.entities.Document;
-import com.example.beprogettosettimana4.payloads.DocumentDTO;
+import com.example.beprogettosettimana4.payloads.DocumentResponseDTO;
 import com.example.beprogettosettimana4.services.DocumentService;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -20,25 +21,30 @@ public class DocumentController {
         this.documentService = documentService;
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public Document createDocument(
-            @Valid @RequestBody DocumentDTO documentDTO,
+    public DocumentResponseDTO createDocument(
+            @RequestParam("name") String name,
+            @RequestPart("file") MultipartFile file,
             Authentication authentication) {
 
-        return documentService.createDocument(
-                documentDTO,
+        Document document = documentService.createDocument(
+                name,
+                file,
                 authentication.getName()
         );
+
+        return toDTO(document);
     }
 
     @GetMapping
-    public List<Document> getMyDocuments(
+    public List<DocumentResponseDTO> getMyDocuments(
             Authentication authentication) {
 
-        return documentService.getMyDocuments(
-                authentication.getName()
-        );
+        return documentService.getMyDocuments(authentication.getName())
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @DeleteMapping("/{id}")
@@ -50,6 +56,16 @@ public class DocumentController {
         documentService.deleteDocument(
                 id,
                 authentication.getName()
+        );
+    }
+
+    private DocumentResponseDTO toDTO(Document document) {
+
+        return new DocumentResponseDTO(
+                document.getId(),
+                document.getName(),
+                "/uploads/" + document.getFileName(),
+                document.getExtractedText()
         );
     }
 }

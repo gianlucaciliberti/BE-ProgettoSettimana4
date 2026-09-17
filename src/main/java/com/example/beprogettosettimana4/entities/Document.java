@@ -10,9 +10,14 @@ public class Document {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
-    private String url;
+    @Column(nullable = false)
+    private String fileName;
+
+    @Column(columnDefinition = "TEXT")
+    private String extractedText;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -21,9 +26,9 @@ public class Document {
     public Document() {
     }
 
-    public Document(String name, String url, User user) {
+    public Document(String name, String fileName, User user) {
         this.name = name;
-        this.url = url;
+        this.fileName = fileName;
         this.user = user;
     }
 
@@ -39,12 +44,20 @@ public class Document {
         this.name = name;
     }
 
-    public String getUrl() {
-        return url;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getExtractedText() {
+        return extractedText;
+    }
+
+    public void setExtractedText(String extractedText) {
+        this.extractedText = extractedText;
     }
 
     public User getUser() {

@@ -1,10 +1,6 @@
 package com.example.beprogettosettimana4.entities;
 
 import jakarta.persistence.*;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.OneToMany;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -22,9 +18,6 @@ public class User {
 
     @Column(nullable = false)
     private String password;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<Photo> photos = new java.util.ArrayList<>();
 
     public User() {
     }
@@ -61,13 +54,5 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public java.util.List<Photo> getPhotos() {
-        return photos;
-    }
-
-    public void setPhotos(java.util.List<Photo> photos) {
-        this.photos = photos;
     }
 }

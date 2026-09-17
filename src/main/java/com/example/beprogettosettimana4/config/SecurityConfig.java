@@ -93,6 +93,9 @@ public class SecurityConfig {
                                 "/api/auth/login"
                         ).permitAll()
 
+                        .requestMatchers("/uploads/**")
+                        .permitAll()
+
                         .requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
 

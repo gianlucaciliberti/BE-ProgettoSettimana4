@@ -926,3 +926,146 @@ input::placeholder {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================
+   TESTO ESTRATTO (OCR)
+========================= */
+
+.extracted-text {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eee8dd;
+  color: #4f4b44;
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.document-info .delete-button {
+  margin-top: 12px;
+}
+
+/* =========================
+   POST FORM
+========================= */
+
+.post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-toggle button {
+  border: 1px solid #cfc8bb;
+  border-radius: 8px;
+  padding: 9px 15px;
+  background: transparent;
+  color: #5b554d;
+  font-size: 14px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.mode-toggle button:hover {
+  background: #e9e2d7;
+  color: #25231f;
+}
+
+.mode-toggle .nav-active {
+  background: #243b35;
+  border-color: #243b35;
+  color: white;
+}
+
+.file-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.file-previews img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #d8d0c4;
+}
+
+/* =========================
+   POST MULTI-FOTO
+========================= */
+
+.post-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 2px;
+}
+
+.post-photos-grid img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.post-location {
+  margin: 8px 0 0;
+  color: #5b554d;
+  font-size: 13px;
+}
+
+/* =========================
+   MAPPA E GEOLOCALIZZAZIONE
+========================= */
+
+.location-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.location-search {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.location-search input {
+  flex: 1;
+  min-width: 160px;
+}
+
+.location-search button {
+  border: 1px solid #cfc8bb;
+  border-radius: 10px;
+  padding: 0 16px;
+  background: #eee8dd;
+  color: #403a32;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.location-search button:hover {
+  background: #dfd5c6;
+}
+
+.map-container {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #d9d3c8;
+}
+
+.location-hint {
+  margin: 0;
+  color: #77736c;
+  font-size: 12px;
+}

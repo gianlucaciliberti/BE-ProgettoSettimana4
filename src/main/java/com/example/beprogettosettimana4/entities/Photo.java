@@ -10,59 +10,38 @@ public class Photo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String url;
-
-    private String title;
-
-    private boolean visible;
+    @Column(nullable = false)
+    private String fileName;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
 
     public Photo() {
     }
 
-    public Photo(String url, String title, boolean visible, User user) {
-        this.url = url;
-        this.title = title;
-        this.visible = visible;
-        this.user = user;
+    public Photo(String fileName, Post post) {
+        this.fileName = fileName;
+        this.post = post;
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getUrl() {
-        return url;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
-    public String getTitle() {
-        return title;
+    public Post getPost() {
+        return post;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public boolean isVisible() {
-        return visible;
-    }
-
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
+    public void setPost(Post post) {
+        this.post = post;
     }
 }

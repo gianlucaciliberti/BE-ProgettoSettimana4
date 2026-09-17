@@ -1,7 +1,26 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./App.css";
+import "leaflet/dist/leaflet.css";
+import PostForm from "./components/PostForm";
+import LocationPicker from "./components/LocationPicker";
 
 const API_URL = "http://localhost:8080";
+
+const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+const EMPTY_LOCATION = { latitude: null, longitude: null, address: "" };
+
+function formatLocation(item) {
+  if (item.address) {
+    return item.address;
+  }
+
+  if (item.latitude != null && item.longitude != null) {
+    return `${item.latitude.toFixed(4)}, ${item.longitude.toFixed(4)}`;
+  }
+
+  return null;
+}
 
 function App() {
   const [page, setPage] = useState("login");
@@ -16,17 +35,16 @@ function App() {
   );
 
   const [user, setUser] = useState(null);
-  const [photos, setPhotos] = useState([]);
-  const [publicPhotos, setPublicPhotos] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [publicPosts, setPublicPosts] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [documentName, setDocumentName] = useState("");
-  const [documentUrl, setDocumentUrl] = useState("");
+  const [documentFile, setDocumentFile] = useState(null);
 
-  const [photoUrl, setPhotoUrl] = useState("");
-  const [photoTitle, setPhotoTitle] = useState("");
-  const [photoVisible, setPhotoVisible] = useState(false);
-
-  const [editingPhoto, setEditingPhoto] = useState(null);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editCaption, setEditCaption] = useState("");
+  const [editVisible, setEditVisible] = useState(false);
+  const [editLocation, setEditLocation] = useState(EMPTY_LOCATION);
 
   const [message, setMessage] = useState("");
 
@@ -90,9 +108,9 @@ function App() {
       setToken(data);
 
       await loadProfile(data);
-      await loadPhotos(data);
+      await loadPosts(data);
       await loadDocuments(data);
-      await loadPublicPhotos(data);
+      await loadPublicPosts(data);
 
       setUsername("");
       setPassword("");
@@ -118,19 +136,19 @@ function App() {
     setUser(data);
   };
 
-  const loadPhotos = async (jwt = token) => {
-    const response = await fetch(`${API_URL}/api/photos`, {
+  const loadPosts = async (jwt = token) => {
+    const response = await fetch(`${API_URL}/api/posts`, {
       headers: {
         Authorization: `Bearer ${jwt}`,
       },
     });
 
     if (!response.ok) {
-      throw new Error("Impossibile recuperare le foto");
+      throw new Error("Impossibile recuperare i post");
     }
 
     const data = await response.json();
-    setPhotos(data);
+    setPosts(data);
   };
 
   const loadDocuments = async (jwt = token) => {
@@ -148,8 +166,8 @@ function App() {
     setDocuments(data);
   };
 
-  const loadPublicPhotos = async (jwt = token) => {
-    const response = await fetch(`${API_URL}/api/photos/public`, {
+  const loadPublicPosts = async (jwt = token) => {
+    const response = await fetch(`${API_URL}/api/posts/public`, {
       headers: {
         Authorization: `Bearer ${jwt}`,
       },
@@ -160,50 +178,60 @@ function App() {
     }
 
     const data = await response.json();
-    setPublicPhotos(data);
+    setPublicPosts(data);
   };
 
-  const handleCreatePhoto = async (e) => {
-    e.preventDefault();
+  const handleCreatePost = async ({ caption, visible, location, files }) => {
     setMessage("");
 
-    try {
-      const response = await fetch(`${API_URL}/api/photos`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          url: photoUrl,
-          title: photoTitle,
-          visible: photoVisible,
-        }),
-      });
+    const formData = new FormData();
 
-      if (!response.ok) {
-        throw new Error("Impossibile aggiungere la foto");
-      }
+    formData.append(
+      "data",
+      new Blob(
+        [
+          JSON.stringify({
+            caption,
+            visible,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            address: location.address,
+          }),
+        ],
+        { type: "application/json" }
+      )
+    );
 
-      setPhotoUrl("");
-      setPhotoTitle("");
-      setPhotoVisible(false);
+    files.forEach((file) => formData.append("photos", file));
 
-      setMessage("Foto aggiunta!");
+    const response = await fetch(`${API_URL}/api/posts`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
 
-      await loadPhotos();
-      await loadPublicPhotos();
-    } catch (error) {
-      setMessage(error.message);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Impossibile pubblicare il post");
     }
+
+    setMessage("Post pubblicato!");
+
+    await loadPosts();
+    await loadPublicPosts();
   };
 
-  const startEdit = (photo) => {
-    setEditingPhoto(photo);
-
-    setPhotoUrl(photo.url);
-    setPhotoTitle(photo.title);
-    setPhotoVisible(photo.visible);
+  const startEditPost = (post) => {
+    setEditingPost(post);
+    setEditCaption(post.caption);
+    setEditVisible(post.visible);
+    setEditLocation({
+      latitude: post.latitude,
+      longitude: post.longitude,
+      address: post.address || "",
+    });
 
     window.scrollTo({
       top: 0,
@@ -211,21 +239,18 @@ function App() {
     });
   };
 
-  const cancelEdit = () => {
-    setEditingPhoto(null);
-    setPhotoUrl("");
-    setPhotoTitle("");
-    setPhotoVisible(false);
+  const cancelEditPost = () => {
+    setEditingPost(null);
     setMessage("");
   };
 
-  const handleUpdatePhoto = async (e) => {
+  const handleUpdatePost = async (e) => {
     e.preventDefault();
     setMessage("");
 
     try {
       const response = await fetch(
-        `${API_URL}/api/photos/${editingPhoto.id}`,
+        `${API_URL}/api/posts/${editingPost.id}`,
         {
           method: "PUT",
           headers: {
@@ -233,31 +258,33 @@ function App() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            url: photoUrl,
-            title: photoTitle,
-            visible: photoVisible,
+            caption: editCaption,
+            visible: editVisible,
+            latitude: editLocation.latitude,
+            longitude: editLocation.longitude,
+            address: editLocation.address,
           }),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Impossibile modificare la foto");
+        throw new Error("Impossibile modificare il post");
       }
 
-      setMessage("Foto modificata!");
+      setMessage("Post modificato!");
 
-      cancelEdit();
+      setEditingPost(null);
 
-      await loadPhotos();
-      await loadPublicPhotos();
+      await loadPosts();
+      await loadPublicPosts();
     } catch (error) {
       setMessage(error.message);
     }
   };
 
-  const handleDeletePhoto = async (id) => {
+  const handleDeletePost = async (id) => {
     const confirmed = window.confirm(
-      "Vuoi davvero eliminare questa foto?"
+      "Vuoi davvero eliminare questo post?"
     );
 
     if (!confirmed) {
@@ -267,7 +294,7 @@ function App() {
     setMessage("");
 
     try {
-      const response = await fetch(`${API_URL}/api/photos/${id}`, {
+      const response = await fetch(`${API_URL}/api/posts/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -275,15 +302,36 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error("Impossibile eliminare la foto");
+        throw new Error("Impossibile eliminare il post");
       }
 
-      setMessage("Foto eliminata!");
+      setMessage("Post eliminato!");
 
-      await loadPhotos();
-      await loadPublicPhotos();
+      await loadPosts();
+      await loadPublicPosts();
     } catch (error) {
       setMessage(error.message);
+    }
+  };
+
+  const handleDocumentFileChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
+      setMessage("Formato non supportato: sono ammessi solo JPG, PNG o WEBP");
+      setDocumentFile(null);
+      return;
+    }
+
+    setMessage("");
+    setDocumentFile(file);
+
+    if (!documentName) {
+      setDocumentName(file.name);
     }
   };
 
@@ -291,26 +339,63 @@ function App() {
     e.preventDefault();
     setMessage("");
 
+    if (!documentFile) {
+      setMessage("Seleziona un file da caricare");
+      return;
+    }
+
     try {
+      const formData = new FormData();
+      formData.append("name", documentName);
+      formData.append("file", documentFile);
+
       const response = await fetch(`${API_URL}/api/documents`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: documentName,
-          url: documentUrl,
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Impossibile aggiungere il documento");
+        const errorText = await response.text();
+        throw new Error(errorText || "Impossibile aggiungere il documento");
       }
 
       setDocumentName("");
-      setDocumentUrl("");
-      setMessage("Documento aggiunto!");
+      setDocumentFile(null);
+      setMessage("Documento aggiunto! Testo estratto tramite OCR.");
+
+      await loadDocuments();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  const handleDeleteDocument = async (id) => {
+    const confirmed = window.confirm(
+      "Vuoi davvero eliminare questo documento?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/documents/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Impossibile eliminare il documento");
+      }
+
+      setMessage("Documento eliminato!");
 
       await loadDocuments();
     } catch (error) {
@@ -323,8 +408,9 @@ function App() {
 
     setToken("");
     setUser(null);
-    setPhotos([]);
-    setPublicPhotos([]);
+    setPosts([]);
+    setPublicPosts([]);
+    setDocuments([]);
     setPage("login");
     setSection("home");
     setMessage("");
@@ -540,7 +626,7 @@ function App() {
                 <h1>Momenti da scoprire</h1>
 
                 <p>
-                  Guarda le immagini che gli altri hanno scelto
+                  Guarda i post che gli altri hanno scelto
                   di condividere.
                 </p>
               </div>
@@ -555,12 +641,12 @@ function App() {
                 </div>
 
                 <span className="photo-count">
-                  {publicPhotos.length}{" "}
-                  {publicPhotos.length === 1 ? "foto" : "foto"}
+                  {publicPosts.length}{" "}
+                  {publicPosts.length === 1 ? "post" : "post"}
                 </span>
               </div>
 
-              {publicPhotos.length === 0 ? (
+              {publicPosts.length === 0 ? (
                 <div className="empty-state">
                   <span>○</span>
 
@@ -573,20 +659,28 @@ function App() {
                 </div>
               ) : (
                 <div className="gallery">
-                  {publicPhotos.map((photo) => (
-                    <article
-                      className="photo-card"
-                      key={photo.id}
-                    >
-                      <img
-                        src={photo.url}
-                        alt={photo.title}
-                      />
+                  {publicPosts.map((post) => (
+                    <article className="photo-card" key={post.id}>
+                      <div className="post-photos-grid">
+                        {post.photoUrls.map((url) => (
+                          <img
+                            key={url}
+                            src={`${API_URL}${url}`}
+                            alt={post.caption}
+                          />
+                        ))}
+                      </div>
 
                       <div className="photo-info">
-                        <h3>{photo.title}</h3>
+                        <h3>{post.caption}</h3>
 
-                        <span>Pubblica</span>
+                        <span>@{post.username}</span>
+
+                        {formatLocation(post) && (
+                          <p className="post-location">
+                            📍 {formatLocation(post)}
+                          </p>
+                        )}
                       </div>
                     </article>
                   ))}
@@ -615,80 +709,60 @@ function App() {
             </section>
 
             <section className="add-section">
-              <div>
-                <span className="eyebrow">
-                  {editingPhoto
-                    ? "MODIFICA MOMENTO"
-                    : "NUOVO RICORDO"}
-                </span>
+              {editingPost ? (
+                <>
+                  <div>
+                    <span className="eyebrow">MODIFICA POST</span>
+                    <h2>Modifica il post</h2>
+                  </div>
 
-                <h2>
-                  {editingPhoto
-                    ? "Modifica la foto"
-                    : "Aggiungi una foto"}
-                </h2>
-              </div>
+                  <form onSubmit={handleUpdatePost} className="photo-form post-form">
+                    <input
+                      type="text"
+                      placeholder="Didascalia"
+                      value={editCaption}
+                      onChange={(e) => setEditCaption(e.target.value)}
+                      required
+                    />
 
-              <form
-                onSubmit={
-                  editingPhoto
-                    ? handleUpdatePhoto
-                    : handleCreatePhoto
-                }
-                className="photo-form"
-              >
-                <input
-                  type="url"
-                  placeholder="URL della foto"
-                  value={photoUrl}
-                  onChange={(e) =>
-                    setPhotoUrl(e.target.value)
-                  }
-                  required
-                />
+                    <label className="visibility-option">
+                      <input
+                        type="checkbox"
+                        checked={editVisible}
+                        onChange={(e) => setEditVisible(e.target.checked)}
+                      />
+                      <span>Rendi questo post pubblico</span>
+                    </label>
 
-                <input
-                  type="text"
-                  placeholder="Titolo"
-                  value={photoTitle}
-                  onChange={(e) =>
-                    setPhotoTitle(e.target.value)
-                  }
-                  required
-                />
+                    <LocationPicker
+                      latitude={editLocation.latitude}
+                      longitude={editLocation.longitude}
+                      address={editLocation.address}
+                      onChange={setEditLocation}
+                    />
 
-                <button
-                  type="submit"
-                  className="primary-button"
-                >
-                  {editingPhoto
-                    ? "Salva modifiche"
-                    : "Aggiungi"}
-                </button>
-              </form>
+                    <button type="submit" className="primary-button">
+                      Salva modifiche
+                    </button>
 
-              <label className="visibility-option">
-                <input
-                  type="checkbox"
-                  checked={photoVisible}
-                  onChange={(e) =>
-                    setPhotoVisible(e.target.checked)
-                  }
-                />
+                    <button
+                      type="button"
+                      className="cancel-button"
+                      onClick={cancelEditPost}
+                    >
+                      Annulla modifica
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <span className="eyebrow">NUOVO RICORDO</span>
+                    <h2>Crea un post</h2>
+                  </div>
 
-                <span>
-                  Rendi questo momento pubblico
-                </span>
-              </label>
-
-              {editingPhoto && (
-                <button
-                  type="button"
-                  className="cancel-button"
-                  onClick={cancelEdit}
-                >
-                  Annulla modifica
-                </button>
+                  <PostForm onSubmit={handleCreatePost} />
+                </>
               )}
 
               {message && (
@@ -703,61 +777,63 @@ function App() {
                     RACCOLTA PERSONALE
                   </span>
 
-                  <h2>I tuoi momenti</h2>
+                  <h2>I tuoi post</h2>
                 </div>
 
                 <span className="photo-count">
-                  {photos.length}{" "}
-                  {photos.length === 1 ? "foto" : "foto"}
+                  {posts.length}{" "}
+                  {posts.length === 1 ? "post" : "post"}
                 </span>
               </div>
 
-              {photos.length === 0 ? (
+              {posts.length === 0 ? (
                 <div className="empty-state">
                   <span>○</span>
 
-                  <h3>Ancora nessun momento</h3>
+                  <h3>Ancora nessun post</h3>
 
                   <p>
-                    Aggiungi la tua prima foto per iniziare
+                    Crea il tuo primo post per iniziare
                     la raccolta.
                   </p>
                 </div>
               ) : (
                 <div className="gallery">
-                  {photos.map((photo) => (
-                    <article
-                      className="photo-card"
-                      key={photo.id}
-                    >
-                      <img
-                        src={photo.url}
-                        alt={photo.title}
-                      />
+                  {posts.map((post) => (
+                    <article className="photo-card" key={post.id}>
+                      <div className="post-photos-grid">
+                        {post.photoUrls.map((url) => (
+                          <img
+                            key={url}
+                            src={`${API_URL}${url}`}
+                            alt={post.caption}
+                          />
+                        ))}
+                      </div>
 
                       <div className="photo-info">
-                        <h3>{photo.title}</h3>
+                        <h3>{post.caption}</h3>
 
                         <span>
-                          {photo.visible
-                            ? "Pubblica"
-                            : "Privata"}
+                          {post.visible ? "Pubblico" : "Privato"}
                         </span>
+
+                        {formatLocation(post) && (
+                          <p className="post-location">
+                            📍 {formatLocation(post)}
+                          </p>
+                        )}
 
                         <div className="photo-actions">
                           <button
-                            onClick={() =>
-                              startEdit(photo)
-                            }
+                            onClick={() => startEditPost(post)}
                             className="edit-button"
                           >
                             Modifica
                           </button>
 
                           <button
-                            onClick={() =>
-                              handleDeletePhoto(photo.id)
-                            }
+                            onClick={() => handleDeletePost(post.id)}
                             className="delete-button"
                           >
                             Elimina
@@ -795,10 +871,9 @@ function App() {
                 />
 
                 <input
-                  type="url"
-                  placeholder="URL del documento"
-                  value={documentUrl}
-                  onChange={(e) => setDocumentUrl(e.target.value)}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleDocumentFileChange}
                   required
                 />
 
@@ -806,7 +881,7 @@ function App() {
                   type="submit"
                   className="primary-button"
                 >
-                  Aggiungi documento
+                  Carica documento
                 </button>
               </form>
 
@@ -815,7 +890,8 @@ function App() {
                   <span>□</span>
                   <h3>Nessun documento</h3>
                   <p>
-                    Aggiungi un documento al tuo archivio personale.
+                    Carica un documento: il testo verrà estratto
+                    automaticamente tramite OCR.
                   </p>
                 </div>
               ) : (
@@ -833,12 +909,25 @@ function App() {
                         <h3>{document.name}</h3>
 
                         <a
-                          href={document.url}
+                          href={`${API_URL}${document.fileUrl}`}
                           target="_blank"
                           rel="noreferrer"
                         >
                           Apri documento
                         </a>
+
+                        {document.extractedText && (
+                          <p className="extracted-text">
+                            {document.extractedText}
+                          </p>
+                        )}
+
+                        <button
+                          onClick={() => handleDeleteDocument(document.id)}
+                          className="delete-button"
+                        >
+                          Elimina
+                        </button>
                       </div>
                     </article>
                   ))}
